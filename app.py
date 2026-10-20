@@ -41,7 +41,7 @@ if os.path.exists("docs"):
             with open(os.path.join("docs", file), "r", encoding="utf-8") as f:
                 content += f.read() + "\n\n"
 
-chunks = [content[i:i+200] for i in range(0, len(content), 200)]
+chunks = [content[i:i+200] for i in range(0, len(content), 200) if content[i:i+200].strip() != ""]
 vectors = []
 for chunk in chunks:
     resp = client.embeddings.create(model="embedding-3", input=chunk)
