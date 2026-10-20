@@ -14,23 +14,6 @@ st.title("📈 自动控制原理 AI 导师")
 st.caption("基于 GLM-4 与 Python 控制库构建，支持传递函数自动计算")
 
 # 2. 加载知识库（获取切分好的文档和向量）
-import os
-import numpy as np
-
-# 动态加载并生成知识库向量
-content = ""
-if os.path.exists("docs"):
-    for file in os.listdir("docs"):
-        if file.endswith(".txt"):
-            with open(os.path.join("docs", file), "r", encoding="utf-8") as f:
-                content += f.read() + "\n\n"
-
-chunks = [content[i:i+200] for i in range(0, len(content), 200)]
-vectors = []
-for chunk in chunks:
-    resp = client.embeddings.create(model="embedding-3", input=chunk)
-    vectors.append(resp.data[0].embedding)
-vectors = np.array(vectors)
 
 with st.sidebar:
     st.header("⚙️ 控制面板")
@@ -48,6 +31,22 @@ client = OpenAI(
     api_key=API_KEY,
     base_url="https://open.bigmodel.cn/api/paas/v4"
 )
+import numpy as np
+
+# 动态加载并生成知识库向量
+content = ""
+if os.path.exists("docs"):
+    for file in os.listdir("docs"):
+        if file.endswith(".txt"):
+            with open(os.path.join("docs", file), "r", encoding="utf-8") as f:
+                content += f.read() + "\n\n"
+
+chunks = [content[i:i+200] for i in range(0, len(content), 200)]
+vectors = []
+for chunk in chunks:
+    resp = client.embeddings.create(model="embedding-3", input=chunk)
+    vectors.append(resp.data[0].embedding)
+vectors = np.array(vectors)
 
 # 4. 工具定义
 tools_definition = [
