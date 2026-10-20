@@ -1,0 +1,21 @@
+import control as ctrl
+
+def analyze_system(num: list, den: list) -> str:
+    """
+    输入传递函数的分子和分母系数，自动计算系统的性能指标。
+    """
+    try:
+        # 1. 创建传递函数
+        sys = ctrl.tf(num, den)
+        
+        # 2. 计算阶跃响应性能指标
+        info = ctrl.step_info(sys)
+        
+        # 3. 拼接结果
+        result = f"系统分析结果：\n"
+        result += f"上升时间 (RiseTime): {info['RiseTime']:.2f} 秒\n"
+        result += f"调节时间 (SettlingTime): {info['SettlingTime']:.2f} 秒\n"
+        result += f"超调量 (Overshoot): {info['Overshoot']:.2f} %\n"
+        return result
+    except Exception as e:
+        return f"计算失败，请检查输入格式，错误信息：{e}"
