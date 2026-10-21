@@ -76,9 +76,9 @@ tools_definition = [
 ]
 # 5. 聊天记忆初始化（干净的人设，绝不报错）
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "你是一个顶尖的自控导师。回答需严谨，使用 Markdown 格式。遇到计算题必须调用工具。"}
-    ]
+   st.session_state.messages = [
+    {"role": "system", "content": "你是一个顶尖的自控导师。回答需严谨，使用 Markdown 格式。遇到计算题必须调用工具。\n【注意】：绝对不准在回答中输出 <tool_call> 或 <arg_key> 这种代码标签！你只需要在后台静默调用工具，拿到结果后直接回答用户即可！"}
+]
 
 # 6. 渲染历史对话
 for msg in st.session_state.messages:
