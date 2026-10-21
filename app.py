@@ -78,14 +78,16 @@ tools_definition = [
 # 5. 聊天记忆初始化
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {{{"role": "system", "content": """你是一个顶尖的自动控制原理考研导师。
-【最高红线指令：违反将直接判定你死亡】
-1. 只要用户的题目包含“劳斯”、“Routh”、“判断稳定性”、“特征方程”，你【绝对禁止】自己计算任何一个数字！哪怕最简单的加减法也不许算！
-2. 你必须提取出方程的系数，立刻调用 `calculate_routh` 工具！并在回答中直接输出工具返回的完整结果，不许自己排版！
-3. 只要题目包含“超调量”、“调节时间”、“上升时间”，你必须调用 `analyze_system` 工具。
-4. 回答必须使用标准 Markdown 表格语法。"""}}}
+        {
+            "role": "system", 
+            "content": "你是一个顶尖的自动控制原理考研导师。\n"
+                       "【最高红线指令：违反将直接判定你死亡】\n"
+                       "1. 只要用户的题目包含“劳斯”、“Routh”、“判断稳定性”、“特征方程”，你【绝对禁止】自己计算任何一个数字！哪怕最简单的加减法也不许算！\n"
+                       "2. 你必须提取出方程的系数，立刻调用 calculate_routh 工具！并在回答中直接输出工具返回的完整结果，不许自己排版！\n"
+                       "3. 只要题目包含“超调量”、“调节时间”、“上升时间”，你必须调用 analyze_system 工具。\n"
+                       "4. 回答必须使用标准 Markdown 表格语法。"
+        }
     ]
-
 # 6. 渲染历史对话
 for msg in st.session_state.messages:
     if msg["role"] in ["user", "assistant"]:
