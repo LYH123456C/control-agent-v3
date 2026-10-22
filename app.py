@@ -2,7 +2,7 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
-from tools import calculate_routh
+from tools import calculate_routh,analyze_system,plot_system
 
 # 1. 网页基础设置
 st.set_page_config(page_title="自控原理导师", page_icon="📈", layout="wide")
