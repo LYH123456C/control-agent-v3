@@ -23,7 +23,7 @@ def analyze_system(num: list, den: list) -> str:
 def plot_system(num: list, den: list, plot_type: str = "step"):
     try:
         sys = ctrl.tf(num, den)
-        plt.close('all') # 清空旧画板
+        plt.close('all')
         plt.figure(figsize=(6, 4))
         
         if plot_type == "step":
@@ -42,15 +42,8 @@ def plot_system(num: list, den: list, plot_type: str = "step"):
         print(f"画图失败: {e}")
         return None
 
-# 3. 劳斯判据工具 (绝对精准，不惧复杂分数)
+# 3. 劳斯判据工具 (重写后的硬核版)
 def calculate_routh(coefficients: list) -> str:
-    def calculate_routh(coefficients: list) -> str:
-    # 加这一行证明：
-    res = "【证明：这是 2026 最新版劳斯计算器！】\n"
-    
-    try:
-        from fractions import Fraction
-        # ... (保留原来的代码)
     try:
         from fractions import Fraction
         # 清理前导0
@@ -78,25 +71,21 @@ def calculate_routh(coefficients: list) -> str:
             curr_row = table[-1]
             new_row = []
             
-            # 【最关键的修复】：处理首列为0的情况
+            # 处理首列为0的情况
             if curr_row[0] == 0:
-                # 如果整行全为0，说明有对称根，用上一行求导代替
                 if all(c == 0 for c in curr_row):
                     for j in range(cols):
-                        # 求导系数
                         power = (n - 1) - (i - 2) - (j * 2) 
                         if power > 0:
                             new_row.append(prev_row[j] * power)
                         else:
                             new_row.append(Fraction(0))
                 else:
-                    # 如果只是首列为0，用一个极小正数代替
                     curr_row[0] = Fraction(1, 1000000)
                     for j in range(cols - 1):
                         val = (curr_row[0] * prev_row[j+1] - prev_row[0] * curr_row[j+1]) / curr_row[0]
                         new_row.append(val)
             else:
-                # 正常除法
                 for j in range(cols - 1):
                     val = (curr_row[0] * prev_row[j+1] - prev_row[0] * curr_row[j+1]) / curr_row[0]
                     new_row.append(val)
@@ -114,7 +103,6 @@ def calculate_routh(coefficients: list) -> str:
         # 组装输出结果
         res = "劳斯表：\n"
         for i in range(n):
-            # 将 Fraction 转为字符串，美化输出
             row_strs = []
             for c in table[i]:
                 if c.denominator == 1:
