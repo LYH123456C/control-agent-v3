@@ -100,7 +100,7 @@ if prompt := st.chat_input("请输入你的自控问题（例如：用劳斯判�
     st.session_state.messages.append({"role": "user", "content": full_prompt})
     
     with st.chat_message("assistant"):
-    with st.spinner("导师正在思考并计算..."):
+        with st.spinner("导师正在思考并计算..."):
         try:
             # 【终极物理外挂】：直接拦截劳斯判据，根本不让大模型瞎猜
             if any(word in prompt for word in ["劳斯", "Routh", "判断稳定性", "特征方程"]):
