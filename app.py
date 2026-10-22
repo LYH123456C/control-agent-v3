@@ -114,6 +114,8 @@ if prompt := st.chat_input("请输入你的自控问题（例如：用劳斯判�
                     if len(nums) >= 3:
                         # 把抠出来的数字直接喂给咱们昨天写的 Python 工具
                         tool_result = calculate_routh(nums)
+                        # 加一个防伪标签，证明这是 Python 算的！
+                        tool_result = "【此结果由 Python 绝对精准计算生成，严禁篡改】\n\n" + tool_result
                         st.success("Python 计算完成！导师正在组织语言...")
                         
                         # 把算出来的完美结果，直接发给大模型让它“念”出来
