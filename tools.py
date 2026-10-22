@@ -45,18 +45,15 @@ def plot_system(num: list, den: list, plot_type: str = "step"):
 # 3. 劳斯判据工具 (绝对精准，不惧复杂分数)
 def calculate_routh(coefficients: list) -> str:
     try:
+        from fractions import Fraction
+        coefficients = [c for c in coefficients if c != 0]
         n = len(coefficients)
         if n < 2:
             return "系数不足，无法计算"
             
-        # 使用分数 Fraction 库，保证绝对精度
-        from fractions import Fraction
-        
-        # 初始化前两行
         row1 = [Fraction(c) for c in coefficients[::2]]
         row2 = [Fraction(c) for c in coefficients[1::2]]
         
-        # 补齐长度
         max_len = max(len(row1), len(row2))
         row1 += [Fraction(0)] * (max_len - len(row1))
         row2 += [Fraction(0)] * (max_len - len(row2))
@@ -68,20 +65,16 @@ def calculate_routh(coefficients: list) -> str:
             curr_row = table[-1]
             new_row = []
             
-            # 处理首列为 0 的极度特殊情况
             if curr_row[0] == 0:
-                # 如果整行都是 0，用上一行求导
                 if all(c == 0 for c in curr_row):
                     for j in range(len(prev_row) - 1):
                         new_row.append(prev_row[j+1] * (len(prev_row) - 1 - j))
                 else:
-                    # 如果是单个 0，用一个极小正数替换
                     curr_row[0] = Fraction(1, 10000)
                     for j in range(len(curr_row) - 1):
                         val = (curr_row[0] * prev_row[j+1] - prev_row[0] * curr_row[j+1]) / curr_row[0]
                         new_row.append(val)
             else:
-                # 正常计算
                 for j in range(len(curr_row) - 1):
                     val = (curr_row[0] * prev_row[j+1] - prev_row[0] * curr_row[j+1]) / curr_row[0]
                     new_row.append(val)
@@ -89,17 +82,14 @@ def calculate_routh(coefficients: list) -> str:
             new_row.append(Fraction(0))
             table.append(new_row)
             
-        # 统计符号变化
         first_col = [row[0] for row in table if row[0] != 0]
         sign_changes = 0
         for i in range(len(first_col) - 1):
             if first_col[i] * first_col[i+1] < 0:
                 sign_changes += 1
                 
-        # 格式化输出
         res = "劳斯表：\n"
         for i in range(n):
-            # 把分数转成字符串，好看一点
             row_str = ", ".join([str(c) for c in table[i]])
             res += f"s^{n-1-i}: [{row_str}]\n"
             
@@ -107,6 +97,10 @@ def calculate_routh(coefficients: list) -> str:
             res += "\n结论：第一列全为正，系统稳定。正实部根数目为 0。"
         else:
             res += f"\n结论：第一列符号变化 {sign_changes} 次，系统不稳定。正实部根数目为 {sign_changes}。"
+            
+        return res
+    except Exception as e:
+        return f"计算失败: {e}"
             
         return res
     except Exception as e:
