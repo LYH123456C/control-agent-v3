@@ -24,7 +24,53 @@ client = OpenAI(api_key=API_KEY, base_url="https://open.bigmodel.cn/api/paas/v4"
 # ==========================================
 # 【核心区】：绝对安全的“硬核计算器”
 # ==========================================
-st.subheader("🧮 劳斯判据高精度计算器")
+st.subheader("🧮 劳斯判据高精度计算站")
+# 创建一个下拉菜单，让用户选择算什么
+calc_type = st.selectbox(
+    "请选择要计算的内容：", 
+    ["劳斯判据稳定性分析", "系统性能指标计算（超调量/调节时间）"]
+)
+
+if calc_type == "劳斯判据稳定性分析":
+    st.write("请输入特征方程的系数（降幂排列，用逗号隔开），例如：`1, 2, 3, 4, 5`")
+    coeffs = st.text_input("输入系数：", key="routh_input")
+    
+    if st.button("开始计算劳斯表"):
+        if coeffs:
+            try:
+                nums = [float(x.strip()) for x in coeffs.split(",")]
+                st.info("正在使用底层 Fraction 库进行绝对精准计算...")
+                res = calculate_routh(nums)
+                st.success("计算完成：")
+                st.code(res)
+            except Exception as e:
+                st.error(f"输入有误: {e}")
+
+elif calc_type == "系统性能指标计算（超调量/调节时间）":
+    st.write("请输入闭环传递函数的分子和分母系数（例如：分子填 `10`，分母填 `1, 2, 10`）")
+    col1, col2 = st.columns(2)
+    with col1:
+        num_str = st.text_input("分子系数（num）：", value="10")
+    with col2:
+        den_str = st.text_input("分母系数（den）：", value="1, 2, 10")
+        
+    if st.button("开始计算性能指标"):
+        if num_str and den_str:
+            try:
+                num = [float(x.strip()) for x in num_str.split(",")]
+                den = [float(x.strip()) for x in den_str.split(",")]
+                st.info("正在调用 Python control 库计算...")
+                res = analyze_system(num, den)
+                st.success("计算完成：")
+                st.code(res)
+                
+                # 顺便把图画出来
+                fig = plot_system(num, den, plot_type="step")
+                if fig:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"输入有误: {e}")
+# ==========================================
 st.write("请手动输入特征方程的系数（用逗号隔开，不要写 s，例如：`1, 1, 3, 3, 2, 2`）")
 coeffs = st.text_input("输入系数：")
 
