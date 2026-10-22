@@ -100,53 +100,43 @@ if prompt := st.chat_input("请输入你的自控问题（例如：用劳斯判�
     st.session_state.messages.append({"role": "user", "content": full_prompt})
     
     with st.chat_message("assistant"):
-        with st.spinner("导师正在思考并计算..."):
-            try:
-                # 【霸王硬上弓】：只要有劳斯，强制调用工具
-                forced_tool = "auto"
-                if any(word in prompt for word in ["劳斯", "Routh", "判断稳定性", "特征方程"]):
-                    forced_tool = {"type": "function", "function": {"name": "calculate_routh"}}
-                    
-                # 第一次调用
-                response = client.chat.completions.create(
-                    model="glm-4-plus",
-                    messages=st.session_state.messages,
-                    tools=tools_definition,
-                    tool_choice=forced_tool
-                )
-                response_message = response.choices[0].message
+    with st.spinner("导师正在思考并计算..."):
+        try:
+            # 【终极物理外挂】：直接拦截劳斯判据，根本不让大模型瞎猜
+            if any(word in prompt for word in ["劳斯", "Routh", "判断稳定性", "特征方程"]):
+                st.info("🔧 正在调用 Python 严格计算劳斯表...")
                 
-                if response_message.tool_calls:
-                    tool_call = response_message.tool_calls[0]
-                    args = json.loads(tool_call.function.arguments)
+                # 用正则表达式从你的问题里把数字抠出来
+                import re
+                # 提取所有的数字（支持负数和小数）
+                nums = [float(x) for x in re.findall(r'-?\d+\.?\d*', prompt)]
+                
+                if len(nums) >= 3:
+                    # 把抠出来的数字直接喂给咱们昨天写的 Python 工具
+                    tool_result = calculate_routh(nums)
+                    st.success("Python 计算完成！导师正在组织语言...")
                     
-                    if tool_call.function.name == "analyze_system":
-                        st.info("🔧 正在调用 Python 计算性能指标...")
-                        tool_result = analyze_system(args.get("num"), args.get("den"))
-                        fig = plot_system(args.get("num"), args.get("den"), plot_type="step")
-                        if fig: st.pyplot(fig)
-                    elif tool_call.function.name == "calculate_routh":
-                        st.info("🔧 正在调用 Python 严格计算劳斯表...")
-                        tool_result = calculate_routh(args.get("coefficients"))
+                    # 把算出来的完美结果，直接发给大模型让它“念”出来
+                    st.session_state.messages.append({"role": "user", "content": f"请根据以下 Python 算出的绝对正确的劳斯表结果，用 Markdown 表格给用户输出：\n{tool_result}"})
                     
-                    st.session_state.messages.append(response_message.model_dump())
-                    st.session_state.messages.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "content": str(tool_result)
-                    })
-                    
-                    # 第二次调用
                     final_response = client.chat.completions.create(
                         model="glm-4-plus",
                         messages=st.session_state.messages
                     )
                     final_reply = final_response.choices[0].message.content
                 else:
-                    final_reply = response_message.content
-                
-                st.markdown(final_reply)
-                st.session_state.messages.append({"role": "assistant", "content": final_reply})
-                
-            except Exception as e:
-                st.error(f"出错了：{e}")
+                    final_reply = "没有识别到完整的方程系数，请检查格式。"
+                    
+            # 正常的问答（比如问概念，或者计算超调量）
+            else:
+                response = client.chat.completions.create(
+                    model="glm-4-plus",
+                    messages=st.session_state.messages
+                )
+                final_reply = response.choices[0].message.content
+            
+            st.markdown(final_reply)
+            st.session_state.messages.append({"role": "assistant", "content": final_reply})
+            
+        except Exception as e:
+            st.error(f"出错了：{e}")
