@@ -119,13 +119,14 @@ if prompt := st.chat_input("请输入你的自控问题（例如：用劳斯判�
                         st.success("Python 计算完成！导师正在组织语言...")
                         
                         # 把算出来的完美结果，直接发给大模型让它“念”出来
-                        st.session_state.messages.append({"role": "user", "content": f"请根据以下 Python 算出的绝对正确的劳斯表结果，用 Markdown 表格给用户输出：\n{tool_result}"})
+                        st.session_state.messages.append({"role": "user", "content": f"【最高指令】：这是 Python 算出的绝对正确的文本，你绝对禁止修改任何数字或排版！直接原封不动地把以下内容输出给用户：\n\n{tool_result}"})
                         
                         final_response = client.chat.completions.create(
                             model="glm-4-plus",
                             messages=st.session_state.messages
                         )
-                        final_reply = final_response.choices[0].message.content
+                        # 拿到大模型的话，但为了防止它瞎改，我们直接把 Python 算出的原版贴在后面作为“防伪验证”
+                        final_reply = final_response.choices[0].message.content + "\n\n---\n**附：以下是 Python 底层计算出的绝对精准原版结果：**\n\n" + tool_result
                     else:
                         final_reply = "没有识别到完整的方程系数，请检查格式。"
                         
