@@ -29,7 +29,7 @@ def plot_system(num: list, den: list, plot_type: str = "step"):
         if plot_type == "step":
             time, response = ctrl.step_response(sys)
             plt.plot(time, response, label="Step Response", color='b')
-            plt.title("Step Response (阶跃响应)")
+            plt.title("Step Response ")
             plt.xlabel("Time (s)")
             plt.ylabel("Amplitude")
         elif plot_type == "root":
