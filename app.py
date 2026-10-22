@@ -109,7 +109,10 @@ if prompt := st.chat_input("请输入你的自控问题（例如：用劳斯判�
                     # 用正则表达式从你的问题里把数字抠出来
                     import re
                     # 提取所有的数字（支持负数和小数）
-                    nums = [float(x) for x in re.findall(r'-?\d+\.?\d*', prompt)]
+                    all_nums = [float(x) for x in re.findall(r'-?\d+\.?\d*', prompt)]
+                    # 方程通常阶数就是最高次，保险起见，我们只取最后 5 个数字
+                    # （如果要通用，可以改成提取等号后面的）
+                    nums = all_nums[-5:] if len(all_nums) >= 5 else all_nums
                     
                     if len(nums) >= 3:
                         # 把抠出来的数字直接喂给咱们昨天写的 Python 工具
