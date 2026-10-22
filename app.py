@@ -109,7 +109,7 @@ if prompt := st.chat_input("请输入你的自控问题（例如：用劳斯判�
                     
                 # 第一次调用
                 response = client.chat.completions.create(
-                    model="glm-4-air",
+                    model="glm-4-plus",
                     messages=st.session_state.messages,
                     tools=tools_definition,
                     tool_choice=forced_tool
@@ -138,7 +138,7 @@ if prompt := st.chat_input("请输入你的自控问题（例如：用劳斯判�
                     
                     # 第二次调用
                     final_response = client.chat.completions.create(
-                        model="glm-4-air",
+                        model="glm-4-plus",
                         messages=st.session_state.messages
                     )
                     final_reply = final_response.choices[0].message.content
