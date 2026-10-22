@@ -45,22 +45,55 @@ if prompt := st.chat_input("输入题目或问题（例如：用劳斯判据判�
             st.info("🔧 检测到方程，正在强行提取系数并用 Python 计算...")
             
             # 暴力清洗公式
+            # 1. 清洗并提取等号后面的部分
             clean_prompt = prompt.replace(" ", "")
             eq_part = clean_prompt.split("=")[1] if "=" in clean_prompt else clean_prompt
             
-            # 把 s^4 这种项剔除，只留纯系数
-            eq_part_clean = re.sub(r's\^\d+|s', '', eq_part)
+            # 2. 找到最高次幂
+            max_power = 0
+            power_matches = re.findall(r's\^(\d+)|s\b', eq_part)
+            for p in power_matches:
+                if p: # 如果是 s^5 这种
+                    max_power = max(max_power, int(p))
+                else: # 如果是单独的 s
+                    max_power = max(max_power, 1)
             
-            # 提取所有数字（支持正负号）
-            all_nums = [float(x) for x in re.findall(r'[+-]?\d+\.?\d*', eq_part_clean)]
+            # 3. 按照最高次幂，初始化全 0 的系数列表
+            nums = [0.0] * (max_power + 1)
             
-            # 提取结果组装：补全首位系数
-            if len(all_nums) >= 4:
-                nums = all_nums[:5]
-                if len(nums) == 4:
-                    nums.insert(0, 1.0)
-            else:
-                nums = []
+            # 4. 挨个把项揪出来（支持正负号、小数）
+            # 比如匹配 +3s^3，或者 -2s，或者 5
+            terms = re.findall(r'([+-]?\d*\.?\d*)s\^(\d+)|([+-]?\d*\.?\d*)s\b|([+-]?\d+\.?\d*)$', eq_part)
+            
+            # 重新用更简单的方式解析（避免正则过于复杂）
+            # 先把所有的 s^n 替换成特定的标记，方便提取
+            # 这里用最暴力的替换法：
+            temp_eq = eq_part
+            
+            # 找带 s 的项
+            for match in re.finditer(r'([+-]?\d*\.?\d*)s(?:\^(\d+))?', temp_eq):
+                coef_str = match.group(1)
+                power_str = match.group(2)
+                
+                # 确定系数
+                if coef_str == '' or coef_str == '+':
+                    coef = 1.0
+                elif coef_str == '-':
+                    coef = -1.0
+                else:
+                    coef = float(coef_str)
+                    
+                # 确定次幂
+                power = int(power_str) if power_str else 1
+                
+                # 填入数组对应位置
+                if power <= max_power:
+                    nums[max_power - power] = coef
+                    
+            # 找常数项（最后那个不带 s 的数字）
+            const_match = re.search(r'([+-]?\d+\.?\d*)$', temp_eq.replace("=0", ""))
+            if const_match:
+                nums[-1] = float(const_match.group(1))
             
             if nums:
                 # 强制调用 Python 工具
