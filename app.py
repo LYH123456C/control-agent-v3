@@ -101,17 +101,8 @@ if prompt := st.chat_input("输入题目或问题（例如：用劳斯判据判�
                 st.success("Python 计算完成！以下是绝对精准结果：")
                 st.code(tool_result)
                 
-                # 让大模型把结果整理成标准回答
-                st.session_state.messages.append({"role": "user", "content": f"Python 算出的劳斯表结果如下，请直接输出这段文本，不要修改任何数字或排版：\n{tool_result}"})
-                final_response = client.chat.completions.create(
-                    model="glm-4-plus",
-                    messages=st.session_state.messages
-                )
-                final_reply = final_response.choices[0].message.content
-                st.markdown(final_reply)
-                st.session_state.messages.append({"role": "assistant", "content": final_reply})
-            else:
-                st.error("提取系数失败，请确保输入的是标准多项式。")
+               # 拿到结果，直接写进历史记录，让大模型闭嘴！
+                st.session_state.messages.append({"role": "assistant", "content": tool_result})
         
         # 【拦截器 2】：识别性能指标计算（超调量等）
         elif any(word in prompt for word in ["超调量", "调节时间", "上升时间", "性能指标"]):
