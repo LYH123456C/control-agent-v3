@@ -70,17 +70,11 @@ if prompt := st.chat_input("输入题目或问题（例如：用劳斯判据判�
             # 这一步非常关键，匹配类似 1, 3, 3, 2, 2 这种系数
             # 规则：找等号后面的数字，忽略 s^4 里面的 4
             # 1. 截取等号后面的部分（如果没等号就截取全部）
-            equation_part = prompt.split("=")[-1] if "=" in prompt else prompt
-            # 2. 暴力提取所有数字（不管它是不是在 s^ 后面）
-            all_nums = re.findall(r'\d+\.?\d*', equation_part)
-            # 3. 取最后 5 个数字（因为 4 阶方程有 5 个系数）
+            # 暴力抠出等号后面所有数字
+            eq_part = prompt.split("=")[-1] if "=" in prompt else prompt
+            all_nums = re.findall(r'\d+', eq_part)
+            # 取最后 5 位，如果只有 4 位（代表 s^4 前面省略了 1），就补个 1
             nums = [float(x) for x in all_nums[-5:]]
-            
-            # 如果提取出来的长度不够 5 个，并且第一个不是 1，手动补个 1
-            if len(nums) == 4:
-                nums.insert(0, 1.0)
-            
-            # 2. 自动补齐最高次项的 1（如果用户没写 s^4 前面那个 1）
             if len(nums) == 4:
                 nums.insert(0, 1.0)
             
