@@ -44,6 +44,13 @@ def plot_system(num: list, den: list, plot_type: str = "step"):
 
 # 3. 劳斯判据工具 (绝对精准，不惧复杂分数)
 def calculate_routh(coefficients: list) -> str:
+    def calculate_routh(coefficients: list) -> str:
+    # 加这一行证明：
+    res = "【证明：这是 2026 最新版劳斯计算器！】\n"
+    
+    try:
+        from fractions import Fraction
+        # ... (保留原来的代码)
     try:
         from fractions import Fraction
         # 清理前导0
