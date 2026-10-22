@@ -45,21 +45,21 @@ def plot_system(num: list, den: list, plot_type: str = "step"):
 # 3. 劳斯判据工具 (绝对精准，不惧复杂分数)
 def calculate_routh(coefficients: list) -> str:
     try:
-        import sympy as sp
-        # 去掉高位的 0
-        coefficients = [c for c in coefficients if c != 0]
         n = len(coefficients)
         if n < 2:
-            return "系数不足"
+            return "系数不足，无法计算"
             
-        # 为了保证绝对精度，使用 sympy 的 Rational
-        row1 = [sp.Rational(c) for c in coefficients[::2]]
-        row2 = [sp.Rational(c) for c in coefficients[1::2]]
+        # 使用分数 Fraction 库，保证绝对精度
+        from fractions import Fraction
+        
+        # 初始化前两行
+        row1 = [Fraction(c) for c in coefficients[::2]]
+        row2 = [Fraction(c) for c in coefficients[1::2]]
         
         # 补齐长度
         max_len = max(len(row1), len(row2))
-        row1 += [sp.Rational(0)] * (max_len - len(row1))
-        row2 += [sp.Rational(0)] * (max_len - len(row2))
+        row1 += [Fraction(0)] * (max_len - len(row1))
+        row2 += [Fraction(0)] * (max_len - len(row2))
         
         table = [row1, row2]
         
@@ -68,34 +68,29 @@ def calculate_routh(coefficients: list) -> str:
             curr_row = table[-1]
             new_row = []
             
-            # 【核心修复】：处理第一列为0的特殊情况
+            # 处理首列为 0 的极度特殊情况
             if curr_row[0] == 0:
-                # 如果整行都是0，用上一行求导替换
+                # 如果整行都是 0，用上一行求导
                 if all(c == 0 for c in curr_row):
                     for j in range(len(prev_row) - 1):
                         new_row.append(prev_row[j+1] * (len(prev_row) - 1 - j))
                 else:
-                    # 否则用一个极小的正数 epsilon 代替，这里用 1/10000 会影响符号判断
-                    # 咱们直接用一个带符号的极小量模拟
-                    curr_row[0] = sp.Rational(1, 100000)
+                    # 如果是单个 0，用一个极小正数替换
+                    curr_row[0] = Fraction(1, 10000)
                     for j in range(len(curr_row) - 1):
                         val = (curr_row[0] * prev_row[j+1] - prev_row[0] * curr_row[j+1]) / curr_row[0]
                         new_row.append(val)
             else:
-                # 正常情况
+                # 正常计算
                 for j in range(len(curr_row) - 1):
                     val = (curr_row[0] * prev_row[j+1] - prev_row[0] * curr_row[j+1]) / curr_row[0]
                     new_row.append(val)
                     
-            new_row.append(sp.Rational(0))
+            new_row.append(Fraction(0))
             table.append(new_row)
             
         # 统计符号变化
-        first_col = []
-        for row in table:
-            if row[0] != 0:
-                first_col.append(row[0])
-                
+        first_col = [row[0] for row in table if row[0] != 0]
         sign_changes = 0
         for i in range(len(first_col) - 1):
             if first_col[i] * first_col[i+1] < 0:
@@ -104,7 +99,7 @@ def calculate_routh(coefficients: list) -> str:
         # 格式化输出
         res = "劳斯表：\n"
         for i in range(n):
-            # 把分数转成字符串，方便查看
+            # 把分数转成字符串，好看一点
             row_str = ", ".join([str(c) for c in table[i]])
             res += f"s^{n-1-i}: [{row_str}]\n"
             
