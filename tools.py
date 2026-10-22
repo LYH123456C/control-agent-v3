@@ -46,61 +46,80 @@ def plot_system(num: list, den: list, plot_type: str = "step"):
 def calculate_routh(coefficients: list) -> str:
     try:
         from fractions import Fraction
-        coefficients = [c for c in coefficients if c != 0]
+        # 清理前导0
+        while len(coefficients) > 1 and coefficients[0] == 0:
+            coefficients.pop(0)
+            
         n = len(coefficients)
         if n < 2:
-            return "系数不足，无法计算"
+            return "系数不足"
             
+        # 初始化第一行和第二行
         row1 = [Fraction(c) for c in coefficients[::2]]
         row2 = [Fraction(c) for c in coefficients[1::2]]
         
-        max_len = max(len(row1), len(row2))
-        row1 += [Fraction(0)] * (max_len - len(row1))
-        row2 += [Fraction(0)] * (max_len - len(row2))
+        # 补全列数
+        cols = (n + 1) // 2
+        row1 += [Fraction(0)] * (cols - len(row1))
+        row2 += [Fraction(0)] * (cols - len(row2))
         
         table = [row1, row2]
         
+        # 计算后续行
         for i in range(2, n):
             prev_row = table[-2]
             curr_row = table[-1]
             new_row = []
             
+            # 【最关键的修复】：处理首列为0的情况
             if curr_row[0] == 0:
+                # 如果整行全为0，说明有对称根，用上一行求导代替
                 if all(c == 0 for c in curr_row):
-                    for j in range(len(prev_row) - 1):
-                        new_row.append(prev_row[j+1] * (len(prev_row) - 1 - j))
+                    for j in range(cols):
+                        # 求导系数
+                        power = (n - 1) - (i - 2) - (j * 2) 
+                        if power > 0:
+                            new_row.append(prev_row[j] * power)
+                        else:
+                            new_row.append(Fraction(0))
                 else:
-                    curr_row[0] = Fraction(1, 10000)
-                    for j in range(len(curr_row) - 1):
+                    # 如果只是首列为0，用一个极小正数代替
+                    curr_row[0] = Fraction(1, 1000000)
+                    for j in range(cols - 1):
                         val = (curr_row[0] * prev_row[j+1] - prev_row[0] * curr_row[j+1]) / curr_row[0]
                         new_row.append(val)
             else:
-                for j in range(len(curr_row) - 1):
+                # 正常除法
+                for j in range(cols - 1):
                     val = (curr_row[0] * prev_row[j+1] - prev_row[0] * curr_row[j+1]) / curr_row[0]
                     new_row.append(val)
                     
             new_row.append(Fraction(0))
             table.append(new_row)
             
+        # 统计第一列的符号变化
         first_col = [row[0] for row in table if row[0] != 0]
         sign_changes = 0
         for i in range(len(first_col) - 1):
             if first_col[i] * first_col[i+1] < 0:
                 sign_changes += 1
                 
+        # 组装输出结果
         res = "劳斯表：\n"
         for i in range(n):
-            row_str = ", ".join([str(c) for c in table[i]])
-            res += f"s^{n-1-i}: [{row_str}]\n"
+            # 将 Fraction 转为字符串，美化输出
+            row_strs = []
+            for c in table[i]:
+                if c.denominator == 1:
+                    row_strs.append(str(c.numerator))
+                else:
+                    row_strs.append(f"{c.numerator}/{c.denominator}")
+            res += f"s^{n-1-i}: [{', '.join(row_strs)}]\n"
             
         if sign_changes == 0:
             res += "\n结论：第一列全为正，系统稳定。正实部根数目为 0。"
         else:
             res += f"\n结论：第一列符号变化 {sign_changes} 次，系统不稳定。正实部根数目为 {sign_changes}。"
-            
-        return res
-    except Exception as e:
-        return f"计算失败: {e}"
             
         return res
     except Exception as e:
