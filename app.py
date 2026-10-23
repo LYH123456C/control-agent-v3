@@ -68,6 +68,7 @@ elif calc_type == "系统性能指标计算（超调量/调节时间）":
                 fig = plot_system(num, den, plot_type="step")
                 if fig:
                     st.pyplot(fig)
+                    st.session_state.last_result = res + " (并画出了阶跃响应图)"
             except Exception as e:
                 st.error(f"输入有误: {e}")
 # ==========================================
@@ -83,6 +84,7 @@ if st.button("开始硬核计算"):
             st.success("计算完成：")
             # 这里用 st.code 保证表格格式100%不乱
             st.code(res)
+            st.session_state.last_result = res  # 存入长期记忆
         except Exception as e:
             st.error(f"输入有误: {e}")
 
@@ -100,8 +102,14 @@ for msg in st.session_state.messages:
 if prompt := st.chat_input("在这里问概念（例如：什么是超调量？）"):
     with st.chat_message("user"):
         st.markdown(prompt)
+    # 【联动魔法】：把刚才存的结果拿出来看看
+    context_text = ""
+    if "last_result" in st.session_state and st.session_state.last_result:
+        context_text = f"\n\n【注意】：用户刚刚在上面的计算器算出了一个结果：\n{st.session_state.last_result}\n请结合这个结果来回答用户的问题。"
     
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    # 把用户的话和计算结果拼在一起发过去
+    enhanced_prompt = prompt + context_text
+    st.session_state.messages.append({"role": "user", "content": enhanced_prompt})
     
     with st.chat_message("assistant"):
         response = client.chat.completions.create(
