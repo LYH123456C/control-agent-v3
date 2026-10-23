@@ -118,4 +118,30 @@ if prompt := st.chat_input("在这里问概念（例如：什么是超调量？�
         )
         reply = response.choices[0].message.content
         st.markdown(reply)
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+        st.session_state.messages.append({"role": "assistant", "content": reply}if prompt := st.chat_input("在这里问概念（例如：什么是超调量？）"):
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    # 【强行塞小抄】：不管网页刷没刷新，直接去内存里翻结果
+    context_text = ""
+    if "last_result" in st.session_state and st.session_state.last_result:
+        # 只要找到了计算结果，直接拼在用户的问题前面
+        context_text = f"【背景信息】：根据用户刚刚在上方计算器的结果，数据如下：\n{st.session_state.last_result}\n请结合上述数据回答我的问题。\n\n"
+    
+    enhanced_prompt = context_text + prompt
+    
+    # 把带有小抄的问题塞进记忆
+    st.session_state.messages.append({"role": "user", "content": enhanced_prompt})
+    
+    with st.chat_message("assistant"):
+        with st.spinner("导师正在结合上方数据思考..."):
+            try:
+                response = client.chat.completions.create(
+                    model="glm-4-plus",
+                    messages=st.session_state.messages
+                )
+                reply = response.choices[0].message.content
+                st.markdown(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+            except Exception as e:
+                st.error(f"出错了：{e}")
