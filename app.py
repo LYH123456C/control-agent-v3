@@ -91,44 +91,22 @@ if st.button("开始硬核计算"):
 st.divider()
 # ==========================================
 
-# 3. 聊天区（只聊概念，不准算劳斯表）
+# 3. 聊天区
 if "messages" not in st.session_state:
+    # 解开死命令，让它允许结合数据进行解释
     st.session_state.messages = [{"role": "system", "content": "你是一个资深的自动控制原理导师。请解答概念问题。如果用户带来了计算器的结果让你解释，请结合数据进行分析。不要自己重新计算，只负责解释。"}]
 
+# 渲染历史对话
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input("在这里问概念（例如：什么是超调量？）"):
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    # 【联动魔法】：把刚才存的结果拿出来看看
-    context_text = ""
-    if "last_result" in st.session_state and st.session_state.last_result:
-        context_text = f"\n\n【注意】：用户刚刚在上面的计算器算出了一个结果：\n{st.session_state.last_result}\n请结合这个结果来回答用户的问题。"
-    
-    # 把用户的话和计算结果拼在一起发过去
-    enhanced_prompt = prompt + context_text
-    st.session_state.messages.append({"role": "user", "content": enhanced_prompt})
-    
-    with st.chat_message("assistant"):
-        response = client.chat.completions.create(
-            model="glm-4-plus",
-            messages=st.session_state.messages
-        )
-        # 这里是你原本输出回答的代码
-        reply = response.choices[0].message.content
-        st.markdown(reply)
-        st.session_state.messages.append({"role": "assistant", "content": reply})
-
-# ==========================================
-# 【注意】：下面这句 if 必须是顶格写，并且和上面隔开！
-# ==========================================
-if prompt := st.chat_input("在这里问概念（例如：什么是超调量？）"):
+# 接收输入（确保整个文件里只有这一个 st.chat_input）
+if prompt := st.chat_input("在这里问概念（例如：上面的劳斯表稳定吗？）"):
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    # 这里是你加的小抄代码
+    # 强行塞小抄
     context_text = ""
     if "last_result" in st.session_state and st.session_state.last_result:
         context_text = f"【背景信息】：根据用户刚刚在上方计算器的结果，数据如下：\n{st.session_state.last_result}\n请结合上述数据回答我的问题。\n\n"
@@ -138,7 +116,6 @@ if prompt := st.chat_input("在这里问概念（例如：什么是超调量？�
     
     with st.chat_message("assistant"):
         with st.spinner("导师正在结合上方数据思考..."):
-            # ... 后面的调用代码保持不变 ...
             try:
                 response = client.chat.completions.create(
                     model="glm-4-plus",
