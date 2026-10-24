@@ -117,9 +117,9 @@ if prompt := st.chat_input("在这里问概念（例如：什么是超调量？�
             messages=st.session_state.messages
         )
         # 这里是你原本输出回答的代码
-                reply = response.choices[0].message.content
-                st.markdown(reply)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
+        reply = response.choices[0].message.content
+        st.markdown(reply)
+        st.session_state.messages.append({"role": "assistant", "content": reply})
 
 # ==========================================
 # 【注意】：下面这句 if 必须是顶格写，并且和上面隔开！
