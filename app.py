@@ -93,7 +93,7 @@ st.divider()
 
 # 3. 聊天区（只聊概念，不准算劳斯表）
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "system", "content": "你是一个自控导师。请解答概念问题。不要尝试做劳斯表计算。"}]
+    st.session_state.messages = [{"role": "system", "content": "你是一个资深的自动控制原理导师。请解答概念问题。如果用户带来了计算器的结果让你解释，请结合数据进行分析。不要自己重新计算，只负责解释。"}]
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
