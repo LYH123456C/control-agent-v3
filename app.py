@@ -8,35 +8,50 @@ from tools import calculate_routh
 
 st.set_page_config(page_title="自控导师", page_icon="📈", layout="wide")
 st.title("📈 自动控制原理 AI 导师")
+st.caption("支持 TXT / Word / PDF / 图片题目解析与高精度计算")
 
 load_dotenv()
 API_KEY = os.environ.get("ZHIPU_API_KEY") or os.getenv("ZHIPU_API_KEY")
 client = OpenAI(api_key=API_KEY, base_url="https://open.bigmodel.cn/api/paas/v4")
 
 # ==========================================
-# 【核心区 1】：文件上传与多模态识图
+# 【核心区 1】：多格式文件解析与多模态识图
 # ==========================================
-st.subheader("📂 上传题目（图片 / TXT）")
-uploaded_file = st.file_uploader("上传题目截图或文字文件", type=["txt", "png", "jpg", "jpeg"])
+st.subheader("📂 自动批改与解题系统")
+uploaded_file = st.file_uploader("上传题目文件或截图", type=["txt", "docx", "pdf", "png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
     ext = uploaded_file.name.split(".")[-1].lower()
+    file_content = ""
     
+    # 如果是文档，先提取里面的文字
+    if ext == "txt":
+        file_content = uploaded_file.read().decode("utf-8")
+    elif ext == "docx":
+        import docx
+        doc = docx.Document(uploaded_file)
+        file_content = "\n".join([para.text for para in doc.paragraphs])
+    elif ext == "pdf":
+        import pypdf
+        reader = pypdf.PdfReader(uploaded_file)
+        for page in reader.pages:
+            file_content += page.extract_text() + "\n"
+            
     if st.button("开始解题"):
         with st.spinner("AI 导师正在审题..."):
             try:
+                # 【如果是图片，走视觉大模型】
                 if ext in ["png", "jpg", "jpeg"]:
-                    # 图片走视觉大模型
                     img_data = uploaded_file.read()
                     base64_image = base64.b64encode(img_data).decode('utf-8')
                     
                     response = client.chat.completions.create(
-                        model="glm-4v", # 视觉大模型
+                        model="glm-4v",
                         messages=[
                             {
                                 "role": "user",
                                 "content": [
-                                    {"type": "text", "text": "你是一个自控原理导师。请解答图片中的题目。如果是求特征方程/判断稳定性，请只输出系数数字；如果是化简或推导题，请给出详细步骤。"},
+                                    {"type": "text", "text": "你是一个自控原理导师。请解答图片中的题目。如果是求特征方程/判断稳定性，请只输出系数数字（用逗号隔开）；如果是化简或推导题，请给出详细步骤。"},
                                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                                 ]
                             }
@@ -44,23 +59,23 @@ if uploaded_file is not None:
                     )
                     answer = response.choices[0].message.content
                     
-                    # 如果是纯数字，顺手算个劳斯表
+                    # 判断是纯数字（算劳斯表）还是文字（推导题）
                     if all(c in "0123456789,.- " for c in answer.strip()):
                         st.success(f"提取到方程系数：{answer}")
                         nums = [float(x.strip()) for x in answer.replace("，", ",").split(",")]
                         st.code(calculate_routh(nums))
                     else:
-                        # 如果是推导题，直接展示大模型解答
                         st.markdown("### 📝 导师解答：")
                         st.markdown(answer)
-                        
+                
+                # 【如果是文字文档，走文本大模型】
                 else:
-                    # 文本文件
-                    content = uploaded_file.read().decode("utf-8")
+                    st.info(f"📄 已提取文本内容，正在解答...")
                     response = client.chat.completions.create(
                         model="glm-4-plus",
-                        messages=[{"role": "user", "content": f"请解答这道自控题目：\n{content}"}]
+                        messages=[{"role": "user", "content": f"你是一个自控原理导师。请详细解答这道题目：\n{file_content}"}]
                     )
+                    st.markdown("### 📝 导师解答：")
                     st.markdown(response.choices[0].message.content)
                     
             except Exception as e:
@@ -86,7 +101,7 @@ if st.button("计算劳斯表"):
 st.divider()
 
 # ==========================================
-# 【核心区 3】：聊天区
+# 【核心区 3】：AI 导师聊天区
 # ==========================================
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "system", "content": "你是一个自控导师，请解答概念问题。"}]
