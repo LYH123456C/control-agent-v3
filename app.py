@@ -58,7 +58,6 @@ if uploaded_file is not None:
         # 这里我们暂时只显示图片，具体的识别我们在下面做
         
     if st.button("一键解题"):
-      if st.button("一键解题"):
     # 如果图片/文字里连个数字或者关键词都没有，直接丢给多模态大模型硬解
     if ext in ["png", "jpg", "jpeg"]:
         import base64
