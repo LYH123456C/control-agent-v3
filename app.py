@@ -43,6 +43,7 @@ if calc_type == "劳斯判据稳定性分析":
                 res = calculate_routh(nums)
                 st.success("计算完成：")
                 st.code(res)
+                st.session_state.last_result = res
             except Exception as e:
                 st.error(f"输入有误: {e}")
 
@@ -68,6 +69,7 @@ elif calc_type == "系统性能指标计算（超调量/调节时间）":
                 fig = plot_system(num, den, plot_type="step")
                 if fig:
                     st.pyplot(fig)
+                    st.session_state.last_result = f"性能指标计算结果：\n{res}"
                     st.session_state.last_result = res + " (并画出了阶跃响应图)"
             except Exception as e:
                 st.error(f"输入有误: {e}")
@@ -94,7 +96,7 @@ st.divider()
 # 3. 聊天区
 if "messages" not in st.session_state:
     # 解开死命令，让它允许结合数据进行解释
-    st.session_state.messages = [{"role": "system", "content": "你是一个资深的自动控制原理导师。请解答概念问题。如果用户带来了计算器的结果让你解释，请结合数据进行分析。不要自己重新计算，只负责解释。"}]
+    st.session_state.messages = [{"role": "system", "content": "你是一个资深的自动控制原理导师。请解答概念问题。如果用户带来了计算器的结果让你解释，请结合数据进行分析。绝对不要说你没看到结果。"}]
 
 # 渲染历史对话
 for msg in st.session_state.messages:
@@ -106,12 +108,13 @@ if prompt := st.chat_input("在这里问概念（例如：上面的劳斯表稳�
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    # 强行塞小抄
+    # 【终极拦截】：强行把计算器的结果抓出来，贴在大模型脸上
     context_text = ""
     if "last_result" in st.session_state and st.session_state.last_result:
-        context_text = f"【背景信息】：根据用户刚刚在上方计算器的结果，数据如下：\n{st.session_state.last_result}\n请结合上述数据回答我的问题。\n\n"
+        context_text = f"【系统强制提示：请结合上方计算器刚刚算出的结果来回答用户，不要说你没看到！结果如下：\n{st.session_state.last_result}】\n\n"
     
-    enhanced_prompt = context_text + prompt
+    enhanced_prompt = context_text + f"用户问题：{prompt}"
+    
     st.session_state.messages.append({"role": "user", "content": enhanced_prompt})
     
     with st.chat_message("assistant"):
