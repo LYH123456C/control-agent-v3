@@ -5,3 +5,5 @@ numpy
 control
 matplotlib
 sympy
+python-docx
+pypdf
