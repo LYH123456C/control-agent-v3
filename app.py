@@ -22,6 +22,43 @@ API_KEY = os.environ.get("ZHIPU_API_KEY") or os.getenv("ZHIPU_API_KEY")
 client = OpenAI(api_key=API_KEY, base_url="https://open.bigmodel.cn/api/paas/v4")
 
 # ==========================================
+# 【新增区】：文件上传与解析
+# ==========================================
+st.subheader("📂 自动批改与解题系统")
+uploaded_file = st.file_uploader("上传你的题目文件（仅支持 .txt 格式）", type=["txt"])
+
+if uploaded_file is not None:
+    # 读取文件里的文字
+    file_content = uploaded_file.read().decode("utf-8")
+    st.info(f"📄 已成功读取文件，内容预览：\n{file_content[:100]}...")
+    
+    if st.button("一键解题"):
+        # 这里用正则把文件里的数字全抠出来
+        import re
+        clean_text = file_content.replace(" ", "")
+        eq_part = clean_text.split("=")[1] if "=" in clean_text else clean_text
+        # 剔除 s^4 这种干扰项，只留系数
+        eq_part_clean = re.sub(r's\^\d+|s', '', eq_part)
+        all_nums = [float(x) for x in re.findall(r'[+-]?\d+\.?\d*', eq_part_clean)]
+        
+        # 补齐首项系数
+        if len(all_nums) >= 4:
+            nums = all_nums[:5]
+            if len(nums) == 4:
+                nums.insert(0, 1.0)
+        else:
+            nums = []
+            
+        if nums:
+            st.success(f"提取到的系数为：{nums}。正在计算...")
+            res = calculate_routh(nums)
+            st.code(res)
+            # 存入记忆，让下面的 AI 也能看到
+            st.session_state.last_result = res
+        else:
+            st.error("无法从文件中提取到有效的数字系数，请检查文件内容格式。")
+
+# ==========================================
 # 【核心区】：绝对安全的“硬核计算器”
 # ==========================================
 st.subheader("🧮 劳斯判据高精度计算站")
