@@ -51,7 +51,7 @@ if uploaded_file is not None:
                             {
                                 "role": "user",
                                 "content": [
-                                    {"type": "text", "text": "你是一个自控原理导师。请解答图片中的题目。如果是求特征方程/判断稳定性，请只输出系数数字（用逗号隔开）；如果是化简或推导题，请给出详细步骤。"},
+                                    {"type": "text", "text": "你是用户的私人解题助手。如果是求特征方程，直接输出系数数字。如果用户没有要求详细推导，请直接给出结果。绝对不要说'同学们好'或者'我来给大家解题'之类的废话。"},
                                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                                 ]
                             }
@@ -104,7 +104,15 @@ st.divider()
 # 【核心区 3】：AI 导师聊天区
 # ==========================================
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "system", "content": "你是一个自控导师，请解答概念问题。"}]
+    st.session_state.messages = [
+        {
+            "role": "system", 
+            "content": "你是用户的私人自控智能助手。你的回答风格完全取决于用户的指令：\n"
+                       "1. 如果用户只问答案或语气简短（如'算一下'、'答案是多少'），请直接给出最终结论和极简的数据，绝对不要解释推导过程。\n"
+                       "2. 如果用户使用了'详细讲'、'推导一下'、'为什么'等词语，请展现你强大的推导能力，给出详细的步骤。\n"
+                       "3. 绝对禁止任何'大家好'、'今天我们来'之类的客套话。"
+        }
+    ]
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
