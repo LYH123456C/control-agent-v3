@@ -22,42 +22,97 @@ API_KEY = os.environ.get("ZHIPU_API_KEY") or os.getenv("ZHIPU_API_KEY")
 client = OpenAI(api_key=API_KEY, base_url="https://open.bigmodel.cn/api/paas/v4")
 
 # ==========================================
-# 【新增区】：文件上传与解析
 # ==========================================
-st.subheader("📂 自动批改与解题系统")
-uploaded_file = st.file_uploader("上传你的题目文件（仅支持 .txt 格式）", type=["txt"])
+# 【核心区 1】：多格式文件解析
+# ==========================================
+st.subheader("📂 自动批改与解题系统（支持 TXT / DOCX / PDF / 图片）")
+
+# 允许上传多种文件
+uploaded_file = st.file_uploader("上传题目文件或截图", type=["txt", "docx", "pdf", "png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
-    # 读取文件里的文字
-    file_content = uploaded_file.read().decode("utf-8")
-    st.info(f"📄 已成功读取文件，内容预览：\n{file_content[:100]}...")
+    file_name = uploaded_file.name
+    ext = file_name.split(".")[-1].lower()
+    file_content = ""
     
-    if st.button("一键解题"):
-        # 这里用正则把文件里的数字全抠出来
-        import re
-        clean_text = file_content.replace(" ", "")
-        eq_part = clean_text.split("=")[1] if "=" in clean_text else clean_text
-        # 剔除 s^4 这种干扰项，只留系数
-        eq_part_clean = re.sub(r's\^\d+|s', '', eq_part)
-        all_nums = [float(x) for x in re.findall(r'[+-]?\d+\.?\d*', eq_part_clean)]
+    # 根据后缀名分情况处理
+    if ext == "txt":
+        file_content = uploaded_file.read().decode("utf-8")
+        st.info(f"📄 已成功读取 TXT 文件内容：\n{file_content[:100]}...")
         
-        # 补齐首项系数
-        if len(all_nums) >= 4:
-            nums = all_nums[:5]
-            if len(nums) == 4:
-                nums.insert(0, 1.0)
-        else:
-            nums = []
+    elif ext == "docx":
+        import docx
+        doc = docx.Document(uploaded_file)
+        file_content = "\n".join([para.text for para in doc.paragraphs])
+        st.info(f"📄 已成功读取 Word 文件内容：\n{file_content[:100]}...")
+        
+    elif ext == "pdf":
+        import pypdf
+        reader = pypdf.PdfReader(uploaded_file)
+        for page in reader.pages:
+            file_content += page.extract_text() + "\n"
+        st.info(f"📄 已成功读取 PDF 文件内容：\n{file_content[:100]}...")
+        
+    elif ext in ["png", "jpg", "jpeg"]:
+        st.info("🖼️ 检测到图片，将调用多模态视觉模型进行识别...")
+        # 这里我们暂时只显示图片，具体的识别我们在下面做
+        
+    if st.button("一键解题"):
+        # 如果是图片，走专门的视觉识别逻辑
+        if ext in ["png", "jpg", "jpeg"]:
+            import base64
+            img_data = uploaded_file.read()
+            base64_image = base64.b64encode(img_data).decode('utf-8')
             
-        if nums:
-            st.success(f"提取到的系数为：{nums}。正在计算...")
-            res = calculate_routh(nums)
-            st.code(res)
-            # 存入记忆，让下面的 AI 也能看到
-            st.session_state.last_result = res
+            st.info("AI 正在通过视觉模型看题...")
+            try:
+                # 调用智谱的多模态模型 GLM-4V
+                vision_response = client.chat.completions.create(
+                    model="glm-4v", 
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "请提取这张图片中控制工程题目的所有多项式系数（按降幂排列，用逗号隔开），直接输出数字，不要有多余废话。"},
+                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                            ]
+                        }
+                    ]
+                )
+                extracted_nums = vision_response.choices[0].message.content
+                st.success(f"视觉识别提取到的系数：{extracted_nums}")
+                
+                # 将识别到的字符串转为列表并计算
+                nums = [float(x.strip()) for x in extracted_nums.replace("，", ",").split(",")]
+                res = calculate_routh(nums)
+                st.code(res)
+                st.session_state.last_result = res
+            except Exception as e:
+                st.error(f"图片识别失败: {e}")
+                
+        # 如果是文字类文档，走正则提取逻辑
         else:
-            st.error("无法从文件中提取到有效的数字系数，请检查文件内容格式。")
+            clean_text = file_content.replace(" ", "")
+            eq_part = clean_text.split("=")[1] if "=" in clean_text else clean_text
+            eq_part_clean = re.sub(r's\^\d+|s', '', eq_part)
+            all_nums = [float(x) for x in re.findall(r'[+-]?\d+\.?\d*', eq_part_clean)]
+            
+            if len(all_nums) >= 4:
+                nums = all_nums[:5]
+                if len(nums) == 4:
+                    nums.insert(0, 1.0)
+            else:
+                nums = []
+                
+            if nums:
+                st.success(f"提取到的系数为：{nums}。正在计算...")
+                res = calculate_routh(nums)
+                st.code(res)
+                st.session_state.last_result = res
+            else:
+                st.error("无法从文件中提取到有效的数字系数。")
 
+st.divider()
 # ==========================================
 # 【核心区】：绝对安全的“硬核计算器”
 # ==========================================
