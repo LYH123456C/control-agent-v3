@@ -38,7 +38,8 @@ if calc_type == "劳斯判据稳定性分析":
     if st.button("开始计算劳斯表"):
         if coeffs:
             try:
-                nums = [float(x.strip()) for x in coeffs.split(",")]
+               # 先把中文逗号替换成英文，然后再按英文逗号切分并去掉空格
+                nums = [float(x.strip()) for x in coeffs.replace("，", ",").split(",")]
                 st.info("正在使用底层 Fraction 库进行绝对精准计算...")
                 res = calculate_routh(nums)
                 st.success("计算完成：")
@@ -58,8 +59,8 @@ elif calc_type == "系统性能指标计算（超调量/调节时间）":
     if st.button("开始计算性能指标"):
         if num_str and den_str:
             try:
-                num = [float(x.strip()) for x in num_str.split(",")]
-                den = [float(x.strip()) for x in den_str.split(",")]
+                num = [float(x.strip()) for x in num_str.replace("，", ",").split(",")]
+                den = [float(x.strip()) for x in den_str.replace("，", ",").split(",")]
                 st.info("正在调用 Python control 库计算...")
                 res = analyze_system(num, den)
                 st.success("计算完成：")
