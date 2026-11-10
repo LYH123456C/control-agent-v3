@@ -58,37 +58,44 @@ if uploaded_file is not None:
         # 这里我们暂时只显示图片，具体的识别我们在下面做
         
     if st.button("一键解题"):
-        # 如果是图片，走专门的视觉识别逻辑
-        if ext in ["png", "jpg", "jpeg"]:
-            import base64
-            img_data = uploaded_file.read()
-            base64_image = base64.b64encode(img_data).decode('utf-8')
+      if st.button("一键解题"):
+    # 如果图片/文字里连个数字或者关键词都没有，直接丢给多模态大模型硬解
+    if ext in ["png", "jpg", "jpeg"]:
+        import base64
+        img_data = uploaded_file.read()
+        base64_image = base64.b64encode(img_data).decode('utf-8')
+        
+        st.info("AI 正在分析图片内容...")
+        try:
+            # 先让视觉模型看图，判断是不是能提炼出方程
+            vision_response = client.chat.completions.create(
+                model="glm-4v", 
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "请仔细阅读图片。如果图片是特征方程，请只输出系数（用逗号隔开）；如果图片是其他自控题目，请直接给用户解答这道题。"},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                        ]
+                    }
+                ]
+            )
+            answer = vision_response.choices[0].message.content
             
-            st.info("AI 正在通过视觉模型看题...")
-            try:
-                # 调用智谱的多模态模型 GLM-4V
-                vision_response = client.chat.completions.create(
-                    model="glm-4v", 
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": "请提取这张图片中控制工程题目的所有多项式系数（按降幂排列，用逗号隔开），直接输出数字，不要有多余废话。"},
-                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                            ]
-                        }
-                    ]
-                )
-                extracted_nums = vision_response.choices[0].message.content
-                st.success(f"视觉识别提取到的系数：{extracted_nums}")
-                
-                # 将识别到的字符串转为列表并计算
-                nums = [float(x.strip()) for x in extracted_nums.replace("，", ",").split(",")]
+            # 判断它提取的是不是纯数字（能算劳斯表）
+            if all(c in "0123456789,.- " for c in answer):
+                st.success(f"识别到特征方程系数：{answer}。正在硬核计算...")
+                nums = [float(x.strip()) for x in answer.replace("，", ",").split(",")]
                 res = calculate_routh(nums)
                 st.code(res)
                 st.session_state.last_result = res
-            except Exception as e:
-                st.error(f"图片识别失败: {e}")
+            else:
+                # 如果它认出来这不是方程，而是别的题，直接展示它的解答
+                st.markdown(answer)
+                st.session_state.last_result = "用户上传了一张图片，AI 已经进行了解答。"
+                
+        except Exception as e:
+            st.error(f"图片识别失败: {e}")
                 
         # 如果是文字类文档，走正则提取逻辑
         else:
