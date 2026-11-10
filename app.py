@@ -42,15 +42,7 @@ if uploaded_file is not None:
                     
                     response = client.chat.completions.create(
                         model="glm-4v",
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": "【最高指令】：直接输出最终结果。如果是求特征方程，只输出系数；如果是其他题，只给最终答案。严禁输出任何中间推导步骤，严禁废话！"},
-                                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                                ]
-                            }
-                        ]
+                        messages=[{"role": "user", "content": f"你是一个专业的自控助手。请解答这道题。直接给出答案，不要写'大家好'之类的废话。如果题目涉及劳斯判据，给出表格和结论即可。题目如下：\n{file_content}"}]
                     )
                     answer = response.choices[0].message.content
                     
@@ -119,5 +111,5 @@ if prompt := st.chat_input("在这里问问题..."):
             messages=st.session_state.messages
         )
         reply = response.choices[0].message.content
-        st,markdown(reply)
+        st.markdown(reply)
         st.session_state.messages.append({"role": "assistant", "content": reply})
