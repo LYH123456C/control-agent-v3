@@ -138,48 +138,48 @@ if calc_type == "劳斯判据稳定性分析":
                 st.error(f"输入有误: {e}")
     
     elif calc_type == "系统性能指标计算（超调量/调节时间）":
-    st.write("请输入系统的传递函数分子和分母系数")
-    col1, col2 = st.columns(2)
-    with col1:
-        num_str = st.text_input("分子系数（num）：", value="10")
-    with col2:
-        den_str = st.text_input("分母系数（den）：", value="1, 2, 10")
+        st.write("请输入系统的传递函数分子和分母系数")
+        col1, col2 = st.columns(2)
+        with col1:
+            num_str = st.text_input("分子系数（num）：", value="10")
+        with col2:
+            den_str = st.text_input("分母系数（den）：", value="1, 2, 10")
+            
+        if st.button("开始计算性能指标"):
+            if num_str and den_str:
+                try:
+                    num = [float(x.strip()) for x in num_str.replace("，", ",").split(",")]
+                    den = [float(x.strip()) for x in den_str.replace("，", ",").split(",")]
+                    res = analyze_system(num, den)
+                    st.success("计算完成：")
+                    st.code(res)
+                    
+                    fig = plot_system(num, den, plot_type="step")
+                    if fig:
+                        st.pyplot(fig)
+                    st.session_state.last_result = f"性能指标计算结果：\n{res}"
+                except Exception as e:
+                    st.error(f"输入有误: {e}")
         
-    if st.button("开始计算性能指标"):
-        if num_str and den_str:
-            try:
-                num = [float(x.strip()) for x in num_str.replace("，", ",").split(",")]
-                den = [float(x.strip()) for x in den_str.replace("，", ",").split(",")]
-                res = analyze_system(num, den)
-                st.success("计算完成：")
-                st.code(res)
-                
-                fig = plot_system(num, den, plot_type="step")
-                if fig:
-                    st.pyplot(fig)
-                st.session_state.last_result = f"性能指标计算结果：\n{res}"
-            except Exception as e:
-                st.error(f"输入有误: {e}")
-    
     st.divider()
     
     # ==========================================
     # 【核心区 3】：AI 导师聊天区（带上下文联动）
     # ==========================================
     if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "你是一个资深的自动控制原理导师。如果用户带来了计算器的结果让你解释，请结合数据进行分析。绝对不要说你没看到结果。"}
-    ]
-    
+        st.session_state.messages = [
+            {"role": "system", "content": "你是一个资深的自动控制原理导师。如果用户带来了计算器的结果让你解释，请结合数据进行分析。绝对不要说你没看到结果。"}
+        ]
+        
     for msg in st.session_state.messages:
-    if msg["role"] in ["user", "assistant"]:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-    
+        if msg["role"] in ["user", "assistant"]:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+        
     if prompt := st.chat_input("在这里问概念（例如：上面的劳斯表稳定吗？）"):
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
     context_text = ""
     if "last_result" in st.session_state and st.session_state.last_result:
         context_text = f"【系统强制提示：请结合上方计算器刚刚算出的结果来回答用户，结果如下：\n{st.session_state.last_result}】\n\n"
