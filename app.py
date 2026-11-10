@@ -53,6 +53,9 @@ if uploaded_file is not None:
                     else:
                         st.markdown("### 📝 导师解答：")
                         st.markdown(answer)
+                        # 【联动魔法】：把结果存入记忆，并告诉 AI
+                        st.session_state.messages.append({"role": "user", "content": f"我刚刚上传了题目，题目内容如下：\n{图片内容}"})
+                        st.session_state.messages.append({"role": "assistant", "content": response.choices[0].message.content})
                 else:
                     st.info(f"📄 已提取文本内容，正在解答...")
                     response = client.chat.completions.create(
@@ -61,7 +64,9 @@ if uploaded_file is not None:
                     )
                     st.markdown("### 📝 导师解答：")
                     st.markdown(response.choices[0].message.content)
-                    
+                    # 【联动魔法】：把结果存入记忆，并告诉 AI
+                    st.session_state.messages.append({"role": "user", "content": f"我刚刚上传了题目，题目内容如下：\n{file_content}"})
+                    st.session_state.messages.append({"role": "assistant", "content": response.choices[0].message.content})
             except Exception as e:
                 st.error(f"解答失败：{e}")
 
@@ -103,13 +108,18 @@ if prompt := st.chat_input("在这里问问题..."):
     with st.chat_message("user"):
         st.markdown(prompt)
     
+    # 【关键修改1】：把用户的话存进记忆里
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     with st.chat_message("assistant"):
-        response = client.chat.completions.create(
-            model="glm-4-plus",
-            messages=st.session_state.messages
-        )
-        reply = response.choices[0].message.content
-        st.markdown(reply)
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+        with st.spinner("导师正在翻阅刚才的记录并思考..."):
+            response = client.chat.completions.create(
+                model="glm-4-plus",
+                # 【关键修改2】：把整个聊天记录（包括刚才上传文件的记录）全发给AI
+                messages=st.session_state.messages 
+            )
+            reply = response.choices[0].message.content
+            st.markdown(reply)
+            
+            # 【关键修改3】：把AI的回答也存进记忆里
+            st.session_state.messages.append({"role": "assistant", "content": reply})
