@@ -58,28 +58,28 @@ if uploaded_file is not None:
         # 这里我们暂时只显示图片，具体的识别我们在下面做
         
     if st.button("一键解题"):
-    # 如果图片/文字里连个数字或者关键词都没有，直接丢给多模态大模型硬解
-    if ext in ["png", "jpg", "jpeg"]:
-        import base64
-        img_data = uploaded_file.read()
-        base64_image = base64.b64encode(img_data).decode('utf-8')
-        
-        st.info("AI 正在分析图片内容...")
-        try:
-            # 先让视觉模型看图，判断是不是能提炼出方程
-            vision_response = client.chat.completions.create(
-                model="glm-4v", 
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": "请仔细阅读图片。如果图片是特征方程，请只输出系数（用逗号隔开）；如果图片是其他自控题目，请直接给用户解答这道题。"},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                        ]
-                    }
-                ]
-            )
-            answer = vision_response.choices[0].message.content
+        # 如果图片/文字里连个数字或者关键词都没有，直接丢给多模态大模型硬解
+        if ext in ["png", "jpg", "jpeg"]:
+            import base64
+            img_data = uploaded_file.read()
+            base64_image = base64.b64encode(img_data).decode('utf-8')
+            
+            st.info("AI 正在分析图片内容...")
+            try:
+                # 先让视觉模型看图，判断是不是能提炼出方程
+                vision_response = client.chat.completions.create(
+                    model="glm-4v", 
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "请仔细阅读图片。如果图片是特征方程，请只输出系数（用逗号隔开）；如果图片是其他自控题目，请直接给用户解答这道题。"},
+                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                            ]
+                        }
+                    ]
+                )
+                answer = vision_response.choices[0].message.content
             
             # 判断它提取的是不是纯数字（能算劳斯表）
             if all(c in "0123456789,.- " for c in answer):
